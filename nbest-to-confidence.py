@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+import argparse
+import logging
+import math
+from typing import List, Dict
+
+from sis_espnet_util import load_scores_dict, load_hyps_dict
+from confusion_networks import add_hypothese, normalize_cn, best_cn_path
+
+
+def cn_from_segment(scored_hyps, temperature, only_best=False):
+    cn: List[Dict[str, float]] = []
+
+    sorted_hyps = sorted(scored_hyps, key=lambda pair: pair[1], reverse=True)
+    top_score = sorted_hyps[0][1]
+    logging.info(f'Highest score: {top_score}')
+    sorted_hyps = [(transcript, score-top_score) for transcript, score in sorted_hyps]
+
+    for transcript, score in sorted_hyps:
+        add_hypothese(cn, transcript.split(), math.exp(score / temperature))
+
+        if only_best:
+            break  # Stopping once the first hypothesis has been added
+
+    return normalize_cn(cn)
+
+
+def filter_nones(best_path):
+    return [pos for pos in best_path if pos[0] is not None]
+
+
+def write(out_f, seg_name, best_path):
+    words_reprs = [f'{pos[0]} {pos[1]}' for pos in best_path]
+    out_f.write(f'{seg_name} {" ".join(words_reprs)}\n')
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--logging-level', help='Logging level as per standard logging module')
+    parser.add_argument('--temperature', type=float, default=1.0, help='multiplies log-probs before exponentiation')
+    parser.add_argument('--dummy', action='store_true', help='Only produce the best hypothesis with confidences 1.0')
+    parser.add_argument('hyp_file')
+    parser.add_argument('scores_file')
+    parser.add_argument('confidence_file')
+    args = parser.parse_args()
+
+    logging.basicConfig(format='[%(levelname)s] %(asctime)s - %(name)s - %(message)s', level=args.logging_level)
+
+    if args.temperature < 0.0:
+        raise ValueError(f'Temperatures below zero make no sense (got {args.temperature})')
+
+    with open(args.scores_file) as f:
+        scores = load_scores_dict(f)
+
+    with open(args.hyp_file) as f:
+        hyps = load_hyps_dict(f)
+
+    if scores.keys() != hyps.keys():
+        logging.error('Not matching segments!')
+        logging.error(f'Only in scores: {scores.keys() - hyps.keys()}')
+        logging.error(f'Only in hypotheses: {hyps.keys() - scores.keys()}')
+
+        exit(1)
+
+    nb_nonmatched = 0
+    with open(args.confidence_file, 'w') as out_f:
+        for seg_name in scores.keys():
+            logging.info(f'Processing {seg_name}')
+            score = scores[seg_name]
+            hyp = hyps[seg_name]
+
+            symm_diff_size = len(score.keys() - hyp.keys()) + len(hyp.keys() - score.keys())
+            if symm_diff_size > 0:
+                nb_nonmatched += symm_diff_size
+                logging.error(f'Segment {seg_name} had {symm_diff_size} unmatched scores')
+
+            scored_hyps = [(hyp[variant], score[variant]) for variant in score.keys() if variant in hyp]
+            logging.debug(f'{scored_hyps}')
+
+            cn = cn_from_segment(scored_hyps, args.temperature, args.dummy)
+
+            best_path = filter_nones(best_cn_path(cn))
+
+            write(out_f, seg_name, best_path)
+
+    if nb_nonmatched > 0:
+        logging.warning(f'There was a total of {nb_nonmatched} non matched scores')
+
+
+if __name__ == '__main__':
+    main()
