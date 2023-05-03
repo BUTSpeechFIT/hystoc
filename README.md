@@ -3,7 +3,7 @@ Getting confidences from any end-to-end systems, developed in context of Automat
 The underlying technique was previously sucessfuly applied to [semi-supervised learning in OCR](https://arxiv.org/abs/2104.13037).
 Hystoc is oblivious to the underlying task, but please note that no special care is provided for non-monotonic tasks such as Machine Translation.
 
-When using Hystoc, please cite us (currently readcted because the paper is in a double-blind review).
+When using Hystoc, please cite (currently redacted because the paper is in a double-blind review).
 
 ## Installation
 
@@ -33,3 +33,13 @@ Then, confidences can obtained with:
 ```
 nbest-to-confidence.py --temperature 1.0 hypotheses scores output
 ```
+
+### Performing direct fusion with Hystoc
+Hystoc also allows to directly fuse outputs of multiple systems into a single one.
+
+To this end a list of pairs needs to be provided like this:
+```
+./fuse-nbests.py --method normalize-per-system example/a.score example/a.txt example/b.score example/b.txt
+```
+
+Please note that our experiments did not show Hystoc fusion to consistently outperform Rover.

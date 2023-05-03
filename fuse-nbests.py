@@ -2,7 +2,6 @@
 import argparse
 import logging
 import itertools
-import more_itertools
 import math
 import numpy as np
 import sys
@@ -10,6 +9,31 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
+
+
+# Extracted from the PyPi package more_itertools
+# on the purpose of making Hystoc rely on standard Python only.
+def roundrobin(*iterables):
+    """Yields an item from each iterable, alternating between them.
+
+        >>> list(roundrobin('ABC', 'D', 'EF'))
+        ['A', 'D', 'E', 'B', 'F', 'C']
+
+    This function produces the same output as :func:`interleave_longest`, but
+    may perform better for some inputs (in particular when the number of
+    iterables is small).
+
+    """
+    # Recipe credited to George Sakkis
+    pending = len(iterables)
+    nexts = cycle(iter(it).__next__ for it in iterables)
+    while pending:
+        try:
+            for next in nexts:
+                yield next()
+        except StopIteration:
+            pending -= 1
+            nexts = cycle(islice(nexts, pending))
 
 
 def cn_from_segment(scored_hyps, temperature, only_best=False):
@@ -34,7 +58,7 @@ def round_robin_align(scored_hyps_per_segment, temperature):
         segment[:] = sorted(segment, key=lambda pair: pair[1], reverse=True)
 
     cn: List[Dict[str, float]] = []
-    for transcript, score in more_itertools.roundrobin(*scored_hyps_per_segment):
+    for transcript, score in roundrobin(*scored_hyps_per_segment):
         add_hypothese(cn, transcript.split(), math.exp(temperature * score))
 
     return normalize_cn(cn)
@@ -121,7 +145,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--logging-level', help='Logging level as per standard logging module')
     parser.add_argument('--temperature', type=float, default=1.0, help='multiplies log-probs before exponentiation')
-    parser.add_argument('--method', choices=['direct', 'zero-per-system', 'normalize-per-system', 'normalized-round-robin'], default='direct', help='How to fuse the systems')
+    parser.add_argument('--method', choices=['direct', 'zero-per-system', 'normalize-per-system', 'normalized-round-robin'], default='normalize-per-system', help='How to fuse the systems')
     parser.add_argument('hyps_scores_files', nargs='+', help="A list of pairs, organized as: <hyps A> <scores A> <hyps B> <scores B> ...")
     parser.add_argument('confidence_file', nargs='?', help='If none is given, standard output is used')
     args = parser.parse_args()
