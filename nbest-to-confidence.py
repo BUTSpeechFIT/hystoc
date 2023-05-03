@@ -7,6 +7,7 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
+from io_utils import write_pctm
 
 
 def cn_from_segment(scored_hyps, temperature, only_best=False):
@@ -28,11 +29,6 @@ def cn_from_segment(scored_hyps, temperature, only_best=False):
 
 def filter_nones(best_path):
     return [pos for pos in best_path if pos[0] is not None]
-
-
-def write(out_f, seg_name, best_path):
-    words_reprs = [f'{pos[0]} {pos[1]}' for pos in best_path]
-    out_f.write(f'{seg_name} {" ".join(words_reprs)}\n')
 
 
 def get_token_confidences(score, hyp, temperature, dummy=False):
@@ -91,10 +87,10 @@ def main():
     if args.confidence_file:
         with open(args.confidence_file, 'w') as out_f:
             for seg_name, best_path in outputs.items(): 
-                write(out_f, seg_name, best_path)
+                write_pctm(out_f, seg_name, best_path)
     else:
         for seg_name, best_path in outputs.items(): 
-            write(sys.stdout, seg_name, best_path)
+            write_pctm(sys.stdout, seg_name, best_path)
 
     if nb_nonmatched > 0:
         logging.warning(f'There was a total of {nb_nonmatched} non matched scores')

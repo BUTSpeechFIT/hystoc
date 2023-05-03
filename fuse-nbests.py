@@ -9,6 +9,7 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
+from io_utils import write_pctm
 
 
 # Extracted from the PyPi package more_itertools
@@ -66,11 +67,6 @@ def round_robin_align(scored_hyps_per_segment, temperature):
 
 def filter_nones(best_path):
     return [pos for pos in best_path if pos[0] is not None]
-
-
-def write(out_f, seg_name, best_path):
-    words_reprs = [f'{pos[0]} {pos[1]}' for pos in best_path]
-    out_f.write(f'{seg_name} {" ".join(words_reprs)}\n')
 
 
 def prenormalize_log_scores(variants):
@@ -136,7 +132,7 @@ def merge(hyps_and_scores, method, out_f, temperature):
             raise ValueError(f'Got unsupported method {method}')
 
         best_path = filter_nones(best_cn_path(cn))
-        write(out_f, seg_name, best_path)
+        write_pctm(out_f, seg_name, best_path)
 
     return nb_nonmatched
 
