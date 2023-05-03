@@ -2,6 +2,7 @@
 import argparse
 import logging
 import math
+import sys
 from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
@@ -34,6 +35,16 @@ def write(out_f, seg_name, best_path):
     out_f.write(f'{seg_name} {" ".join(words_reprs)}\n')
 
 
+def get_token_confidences(score, hyp, temperature, dummy=False):
+    scored_hyps = [(hyp[variant], score[variant]) for variant in score.keys() if variant in hyp]
+    logging.debug(f'{scored_hyps}')
+
+    cn = cn_from_segment(scored_hyps, temperature, dummy)
+
+    return filter_nones(best_cn_path(cn))
+    
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--logging-level', help='Logging level as per standard logging module')
@@ -41,7 +52,7 @@ def main():
     parser.add_argument('--dummy', action='store_true', help='Only produce the best hypothesis with confidences 1.0')
     parser.add_argument('hyp_file')
     parser.add_argument('scores_file')
-    parser.add_argument('confidence_file')
+    parser.add_argument('confidence_file', nargs='?', help='If no output file is given, standard output is used')
     args = parser.parse_args()
 
     logging.basicConfig(format='[%(levelname)s] %(asctime)s - %(name)s - %(message)s', level=args.logging_level)
@@ -63,25 +74,27 @@ def main():
         exit(1)
 
     nb_nonmatched = 0
-    with open(args.confidence_file, 'w') as out_f:
-        for seg_name in scores.keys():
-            logging.info(f'Processing {seg_name}')
-            score = scores[seg_name]
-            hyp = hyps[seg_name]
+    outputs = {}
+    for seg_name in scores.keys():
+        logging.info(f'Processing {seg_name}')
+        score = scores[seg_name]
+        hyp = hyps[seg_name]
 
-            symm_diff_size = len(score.keys() - hyp.keys()) + len(hyp.keys() - score.keys())
-            if symm_diff_size > 0:
-                nb_nonmatched += symm_diff_size
-                logging.error(f'Segment {seg_name} had {symm_diff_size} unmatched scores')
+        symm_diff_size = len(score.keys() - hyp.keys()) + len(hyp.keys() - score.keys())
+        if symm_diff_size > 0:
+            nb_nonmatched += symm_diff_size
+            logging.error(f'Segment {seg_name} had {symm_diff_size} unmatched scores')
 
-            scored_hyps = [(hyp[variant], score[variant]) for variant in score.keys() if variant in hyp]
-            logging.debug(f'{scored_hyps}')
+        best_path = get_token_confidences(score, hyp, args.temperature, args.dummy)
+        outputs[seg_name] = best_path
 
-            cn = cn_from_segment(scored_hyps, args.temperature, args.dummy)
-
-            best_path = filter_nones(best_cn_path(cn))
-
-            write(out_f, seg_name, best_path)
+    if args.confidence_file:
+        with open(args.confidence_file, 'w') as out_f:
+            for seg_name, best_path in outputs.items(): 
+                write(out_f, seg_name, best_path)
+    else:
+        for seg_name, best_path in outputs.items(): 
+            write(sys.stdout, seg_name, best_path)
 
     if nb_nonmatched > 0:
         logging.warning(f'There was a total of {nb_nonmatched} non matched scores')
