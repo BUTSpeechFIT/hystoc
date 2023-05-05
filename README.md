@@ -23,10 +23,10 @@ uttB-2 Rice bowl of nice
 
 A score file with (possibly un-normalized) log-probabilities of the hypotheses.
 ```
-uttA-1 -0.264534e-1
-uttA-2 -0.938174e-7
-uttB-1 -0.185739e-2
-uttB-2 -0.294320e-3
+uttA-1 -0.264534
+uttA-2 -9.381741
+uttB-1 -0.185739
+uttB-2 -1.294320
 ```
 
 Then, confidences can obtained with:
