@@ -7,7 +7,7 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
-from io_utils import write_pctm
+from io_utils import write_pctm, write_ctm
 
 
 def cn_from_segment(scored_hyps, temperature, only_best=False):
@@ -38,7 +38,12 @@ def get_token_confidences(score, hyp, temperature, dummy=False):
     cn = cn_from_segment(scored_hyps, temperature, dummy)
 
     return filter_nones(best_cn_path(cn))
-    
+
+
+output_formats = {
+    'ctm': write_ctm,
+    'pctm': write_pctm,
+}
 
 
 def main():
@@ -46,6 +51,7 @@ def main():
     parser.add_argument('--logging-level', help='Logging level as per standard logging module')
     parser.add_argument('--temperature', type=float, default=1.0, help='multiplies log-probs before exponentiation')
     parser.add_argument('--dummy', action='store_true', help='Only produce the best hypothesis with confidences 1.0')
+    parser.add_argument('--output-format', choices=list(output_formats.keys()), default='pctm', help='How to present the confidences')
     parser.add_argument('hyp_file')
     parser.add_argument('scores_file')
     parser.add_argument('confidence_file', nargs='?', help='If no output file is given, standard output is used')
@@ -84,13 +90,14 @@ def main():
         best_path = get_token_confidences(score, hyp, args.temperature, args.dummy)
         outputs[seg_name] = best_path
 
+    write_method = output_formats[args.output_format]
     if args.confidence_file:
         with open(args.confidence_file, 'w') as out_f:
-            for seg_name, best_path in outputs.items(): 
-                write_pctm(out_f, seg_name, best_path)
+            for seg_name, best_path in outputs.items():
+                write_method(out_f, seg_name, best_path)
     else:
-        for seg_name, best_path in outputs.items(): 
-            write_pctm(sys.stdout, seg_name, best_path)
+        for seg_name, best_path in outputs.items():
+            write_method(sys.stdout, seg_name, best_path)
 
     if nb_nonmatched > 0:
         logging.warning(f'There was a total of {nb_nonmatched} non matched scores')
