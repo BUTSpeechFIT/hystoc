@@ -81,7 +81,45 @@ def normalize_log_scores(variants, do_sort=False):
     variants[:] = [(h, s - normalizer) for h, s in pre_norm_scores]
 
 
-def merge(hyps_and_scores, method, temperature):
+def fusion_direct(scored_hyps, temperature):
+    # treat all directly. Unlikely to work for largely different systems
+    all_variants_flat = list(itertools.chain(*scored_hyps))
+    return cn_from_segment(all_variants_flat, temperature, only_best=False)
+
+
+def fusion_zero_per_system(scored_hyps, temperature):
+    # make the largest element have score 0.0 first
+    for system in scored_hyps:
+        prenormalize_log_scores(system)
+    all_variants_flat = list(itertools.chain(*scored_hyps))
+    return cn_from_segment(all_variants_flat, temperature, only_best=False)
+
+
+def fusion_normalize_per_system(scored_hyps, temperature):
+    # apply softmax on n-best scores of each model independently
+    for system in scored_hyps:
+        normalize_log_scores(system)
+    all_variants_flat = list(itertools.chain(*scored_hyps))
+    return cn_from_segment(all_variants_flat, temperature, only_best=False)
+
+
+def fusion_normalized_round_robin(scored_hyps, temperature):
+    # apply softmax on n-best scores of each model independently
+    # the align as A1, B1, C1, A2, B2, C2, A3, ...
+    for system in scored_hyps:
+        normalize_log_scores(system)
+    return round_robin_align(scored_hyps, temperature)
+
+
+fusion_methods = {
+    'direct': fusion_direct,
+    'zero-per-system': fusion_zero_per_system,
+    'normalize-per-system': fusion_normalize_per_system,
+    'normalized-round-robin': fusion_normalized_round_robin,
+}
+
+
+def merge(hyps_and_scores, fusion_method, temperature):
     nb_nonmatched = 0
 
     all_keys = itertools.chain(*[list(s.keys()) for s, h in hyps_and_scores])
@@ -108,30 +146,7 @@ def merge(hyps_and_scores, method, temperature):
             scored_hyps.append(this_system_variants)
         logging.debug(f'Lengths: {len(scored_hyps)} {[len(system) for system in scored_hyps]} {scored_hyps}')
 
-        if method == 'direct':
-            # treat all directly. Unlikely to work for largely different systems
-            all_variants_flat = list(itertools.chain(*scored_hyps))
-            cn = cn_from_segment(all_variants_flat, temperature, only_best=False)
-        elif method == 'zero-per-system':
-            # make the largest element have score 0.0 first
-            for system in scored_hyps:
-                prenormalize_log_scores(system)
-            all_variants_flat = list(itertools.chain(*scored_hyps))
-            cn = cn_from_segment(all_variants_flat, temperature, only_best=False)
-        elif method == 'normalize-per-system':
-            # apply softmax on n-best scores of each model independently
-            for system in scored_hyps:
-                normalize_log_scores(system)
-            all_variants_flat = list(itertools.chain(*scored_hyps))
-            cn = cn_from_segment(all_variants_flat, temperature, only_best=False)
-        elif method == 'normalized-round-robin':
-            # apply softmax on n-best scores of each model independently
-            # the align as A1, B1, C1, A2, B2, C2, A3, ...
-            for system in scored_hyps:
-                normalize_log_scores(system)
-            cn = round_robin_align(scored_hyps, temperature)
-        else:
-            raise ValueError(f'Got unsupported method {method}')
+        cn = fusion_method(scored_hyps, temperature)
 
         best_paths[seg_name] = filter_nones(best_cn_path(cn))
 
@@ -142,7 +157,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--logging-level', help='Logging level as per standard logging module')
     parser.add_argument('--temperature', type=float, default=1.0, help='multiplies log-probs before exponentiation')
-    parser.add_argument('--method', choices=['direct', 'zero-per-system', 'normalize-per-system', 'normalized-round-robin'], default='normalize-per-system', help='How to fuse the systems')
+    parser.add_argument('--method', choices=list(fusion_methods.keys()), default='normalize-per-system', help='How to fuse the systems')
     parser.add_argument('--confidence-file', help='If none is given, standard output is used')
     parser.add_argument('--output-format', choices=list(output_formats.keys()), default='pctm', help='How to present the confidences')
     parser.add_argument('hyps_scores_files', nargs='+', help="A list of pairs, organized as: <hyps A> <scores A> <hyps B> <scores B> ...")
@@ -174,7 +189,8 @@ def main():
 
             exit(1)
 
-    best_paths, nb_nonmatched = merge(system_outputs, args.method, args.temperature)
+    fusion_method = fusion_methods[args.method]
+    best_paths, nb_nonmatched = merge(system_outputs, fusion_method, args.temperature)
     write_method = output_formats[args.output_format]
     if args.confidence_file:
         with open(args.confidence_file, 'w') as out_f:
