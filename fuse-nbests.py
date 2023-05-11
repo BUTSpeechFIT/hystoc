@@ -10,6 +10,7 @@ from typing import List, Dict
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
 from io_utils import output_formats
+from cn_utils import cn_from_segment, filter_nones
 
 
 # Extracted from the PyPi package more_itertools
@@ -37,23 +38,6 @@ def roundrobin(*iterables):
             nexts = itertools.cycle(itertools.islice(nexts, pending))
 
 
-def cn_from_segment(scored_hyps, temperature, only_best=False):
-    cn: List[Dict[str, float]] = []
-
-    sorted_hyps = sorted(scored_hyps, key=lambda pair: pair[1], reverse=True)
-    top_score = sorted_hyps[0][1]
-    logging.info(f'Highest score: {top_score}')
-    sorted_hyps = [(transcript, score-top_score) for transcript, score in sorted_hyps]
-
-    for transcript, score in sorted_hyps:
-        add_hypothese(cn, transcript.split(), math.exp(temperature * score))
-
-        if only_best:
-            break  # Stopping once the first hypothesis has been added
-
-    return normalize_cn(cn)
-
-
 def round_robin_align(scored_hyps_per_segment, temperature):
     for segment in scored_hyps_per_segment:
         segment[:] = sorted(segment, key=lambda pair: pair[1], reverse=True)
@@ -63,10 +47,6 @@ def round_robin_align(scored_hyps_per_segment, temperature):
         add_hypothese(cn, transcript.split(), math.exp(temperature * score))
 
     return normalize_cn(cn)
-
-
-def filter_nones(best_path):
-    return [pos for pos in best_path if pos[0] is not None]
 
 
 def prenormalize_log_scores(variants):

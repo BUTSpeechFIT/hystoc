@@ -1,34 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import math
 import sys
-from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
-from confusion_networks import add_hypothese, normalize_cn, best_cn_path
+from confusion_networks import best_cn_path
 from io_utils import output_formats
-
-
-def cn_from_segment(scored_hyps, temperature, only_best=False):
-    cn: List[Dict[str, float]] = []
-
-    sorted_hyps = sorted(scored_hyps, key=lambda pair: pair[1], reverse=True)
-    top_score = sorted_hyps[0][1]
-    logging.info(f'Highest score: {top_score}')
-    sorted_hyps = [(transcript, score-top_score) for transcript, score in sorted_hyps]
-
-    for transcript, score in sorted_hyps:
-        add_hypothese(cn, transcript.split(), math.exp(score / temperature))
-
-        if only_best:
-            break  # Stopping once the first hypothesis has been added
-
-    return normalize_cn(cn)
-
-
-def filter_nones(best_path):
-    return [pos for pos in best_path if pos[0] is not None]
+from cn_utils import cn_from_segment, filter_nones
 
 
 def get_token_confidences(score, hyp, temperature, dummy=False):
