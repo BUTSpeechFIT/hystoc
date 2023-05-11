@@ -7,9 +7,8 @@ import numpy as np
 import sys
 from typing import List, Dict
 
-from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
-from io_utils import output_formats, get_hyp_score_pairs
+from io_utils import output_formats, get_hyp_score_pairs, load_scores_dict, load_hyps_dict
 from cn_utils import cn_from_segment, filter_nones
 
 

@@ -3,9 +3,8 @@ import argparse
 import logging
 import sys
 
-from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import best_cn_path
-from io_utils import output_formats, get_hyp_score_pairs
+from io_utils import output_formats, get_hyp_score_pairs, load_scores_dict, load_hyps_dict
 from cn_utils import cn_from_segment, filter_nones
 
 
