@@ -5,14 +5,12 @@ import sys
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import best_cn_path
-from io_utils import output_formats
+from io_utils import output_formats, get_hyp_score_pairs
 from cn_utils import cn_from_segment, filter_nones
 
 
 def get_token_confidences(score, hyp, temperature, dummy=False):
-    scored_hyps = [(hyp[variant], score[variant]) for variant in score.keys() if variant in hyp]
-
-    cn = cn_from_segment(scored_hyps, temperature, dummy)
+    cn = cn_from_segment(get_hyp_score_pairs(hyp, score), temperature, dummy)
 
     return filter_nones(best_cn_path(cn))
 

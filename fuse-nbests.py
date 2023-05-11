@@ -9,7 +9,7 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
-from io_utils import output_formats
+from io_utils import output_formats, get_hyp_score_pairs
 from cn_utils import cn_from_segment, filter_nones
 
 
@@ -122,8 +122,7 @@ def merge(hyps_and_scores, fusion_method, temperature):
                 nb_nonmatched += symm_diff_size
                 logging.error(f'Segment {seg_name} had {symm_diff_size} unmatched scores')
 
-            this_system_variants = [(hyp[variant], score[variant]) for variant in score.keys() if variant in hyp]
-            scored_hyps.append(this_system_variants)
+            scored_hyps.append(get_hyp_score_pairs(hyp, score))
         logging.debug(f'Lengths: {len(scored_hyps)} {[len(system) for system in scored_hyps]} {scored_hyps}')
 
         cn = fusion_method(scored_hyps, temperature)

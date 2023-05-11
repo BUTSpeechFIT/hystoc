@@ -14,3 +14,7 @@ output_formats = {
     'ctm': write_ctm,
     'pctm': write_pctm,
 }
+
+
+def get_hyp_score_pairs(hyps, scores):
+    return [(hyps[variant], scores[variant]) for variant in scores.keys() if variant in hyps]
