@@ -7,7 +7,11 @@ When using Hystoc, please cite (currently redacted because the paper is in a dou
 
 ## Installation
 
-So far, installation is limited to manually downloading the package.
+Hystoc is available on PyPi, so you can directly install it:
+
+```
+pip install hystoc
+```
 
 ## Usage
 
