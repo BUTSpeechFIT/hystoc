@@ -1,0 +1,36 @@
+[build-system]
+requires = [ "setuptools>=61" ]
+
+[project]
+name = "hystoc"
+version = "0.1"
+description = "Toolkit for obtaining word-level confidences"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+keywords = ["Confidence estimation", "ASR"]
+
+authors = [
+  {email = "ibenes@fit.vutbr.cz", name = "Karel Beneš"}
+]
+
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+
+dependencies = [
+    'numpy',
+]
+
+[project.urls]
+repository = "https://github.com/BUTSpeechFIT/hystoc"
+
+[tool.setuptools.package-dir]
+"hystoc" = "hystoc"
+
+[project.scripts]
+hystoc-confidences = "hystoc.nbest_to_confidence:main"
+hystoc-fusion = "hystoc.fuse_nbest:main"

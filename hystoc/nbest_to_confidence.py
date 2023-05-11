@@ -3,9 +3,9 @@ import argparse
 import logging
 import sys
 
-from confusion_networks import best_cn_path
-from io_utils import output_formats, get_hyp_score_pairs, load_scores_dict, load_hyps_dict
-from cn_utils import cn_from_segment, filter_nones
+from hystoc.confusion_networks import best_cn_path
+from hystoc.io_utils import output_formats, get_hyp_score_pairs, load_scores_dict, load_hyps_dict
+from hystoc.cn_utils import cn_from_segment, filter_nones
 
 
 def get_token_confidences(score, hyp, temperature, dummy=False):

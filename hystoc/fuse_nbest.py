@@ -7,9 +7,9 @@ import numpy as np
 import sys
 from typing import List, Dict
 
-from confusion_networks import add_hypothese, normalize_cn, best_cn_path
-from io_utils import output_formats, get_hyp_score_pairs, load_scores_dict, load_hyps_dict
-from cn_utils import cn_from_segment, filter_nones
+from hystoc.confusion_networks import add_hypothese, normalize_cn, best_cn_path
+from hystoc.io_utils import output_formats, get_hyp_score_pairs, load_scores_dict, load_hyps_dict
+from hystoc.cn_utils import cn_from_segment, filter_nones
 
 
 # Extracted from the PyPi package more_itertools

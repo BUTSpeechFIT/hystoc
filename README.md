@@ -31,7 +31,7 @@ uttB-2 -1.294320
 
 Then, confidences can obtained with:
 ```
-nbest-to-confidence.py --temperature 1.0 hypotheses scores output
+hystoc-confidences --temperature 1.0 hypotheses scores output
 ```
 
 ### Performing direct fusion with Hystoc
@@ -39,7 +39,7 @@ Hystoc also allows to directly fuse outputs of multiple systems into a single on
 
 To this end a list of pairs needs to be provided like this:
 ```
-./fuse-nbests.py --confidence-file fused.txt --method normalize-per-system example/a.score example/a.txt example/b.score example/b.txt
+hystoc-fusion --confidence-file fused.txt --method normalize-per-system example/a.score example/a.txt example/b.score example/b.txt
 ```
 
 Please note that our experiments did not show Hystoc fusion to consistently outperform Rover.

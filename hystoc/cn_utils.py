@@ -2,7 +2,7 @@ import math
 from typing import List, Dict
 import logging
 
-from confusion_networks import add_hypothese, normalize_cn
+from hystoc.confusion_networks import add_hypothese, normalize_cn
 
 
 def cn_from_segment(scored_hyps, temperature, only_best=False):
