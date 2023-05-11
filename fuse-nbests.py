@@ -9,7 +9,7 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
-from io_utils import write_pctm
+from io_utils import output_formats
 
 
 # Extracted from the PyPi package more_itertools
@@ -144,6 +144,7 @@ def main():
     parser.add_argument('--temperature', type=float, default=1.0, help='multiplies log-probs before exponentiation')
     parser.add_argument('--method', choices=['direct', 'zero-per-system', 'normalize-per-system', 'normalized-round-robin'], default='normalize-per-system', help='How to fuse the systems')
     parser.add_argument('--confidence-file', help='If none is given, standard output is used')
+    parser.add_argument('--output-format', choices=list(output_formats.keys()), default='pctm', help='How to present the confidences')
     parser.add_argument('hyps_scores_files', nargs='+', help="A list of pairs, organized as: <hyps A> <scores A> <hyps B> <scores B> ...")
     args = parser.parse_args()
 
@@ -174,13 +175,14 @@ def main():
             exit(1)
 
     best_paths, nb_nonmatched = merge(system_outputs, args.method, args.temperature)
+    write_method = output_formats[args.output_format]
     if args.confidence_file:
         with open(args.confidence_file, 'w') as out_f:
             for seg_name, best_path in best_paths.items():
-                write_pctm(out_f, seg_name, best_path)
+                write_method(out_f, seg_name, best_path)
     else:
         for seg_name, best_path in best_paths.items():
-            write_pctm(sys.stdout, seg_name, best_path)
+            write_method(sys.stdout, seg_name, best_path)
 
     if nb_nonmatched > 0:
         logging.warning(f'There was a total of {nb_nonmatched} non matched scores')

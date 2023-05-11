@@ -7,7 +7,7 @@ from typing import List, Dict
 
 from sis_espnet_util import load_scores_dict, load_hyps_dict
 from confusion_networks import add_hypothese, normalize_cn, best_cn_path
-from io_utils import write_pctm, write_ctm
+from io_utils import output_formats
 
 
 def cn_from_segment(scored_hyps, temperature, only_best=False):
@@ -37,12 +37,6 @@ def get_token_confidences(score, hyp, temperature, dummy=False):
     cn = cn_from_segment(scored_hyps, temperature, dummy)
 
     return filter_nones(best_cn_path(cn))
-
-
-output_formats = {
-    'ctm': write_ctm,
-    'pctm': write_pctm,
-}
 
 
 def main():

@@ -8,3 +8,9 @@ def write_ctm(out_f, seg_name, best_path):
 
     for i, (word, conf) in enumerate(best_path):
         out_f.write(f'{seg_name} {1} {i*word_dur} {word_dur} {word} {conf}\n')
+
+
+output_formats = {
+    'ctm': write_ctm,
+    'pctm': write_pctm,
+}
