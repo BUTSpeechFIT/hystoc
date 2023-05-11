@@ -33,7 +33,6 @@ def filter_nones(best_path):
 
 def get_token_confidences(score, hyp, temperature, dummy=False):
     scored_hyps = [(hyp[variant], score[variant]) for variant in score.keys() if variant in hyp]
-    logging.debug(f'{scored_hyps}')
 
     cn = cn_from_segment(scored_hyps, temperature, dummy)
 
@@ -57,7 +56,7 @@ def main():
     parser.add_argument('confidence_file', nargs='?', help='If no output file is given, standard output is used')
     args = parser.parse_args()
 
-    logging.basicConfig(format='[%(levelname)s] %(asctime)s - %(name)s - %(message)s', level=args.logging_level)
+    logging.basicConfig(format='[%(levelname)s] %(asctime)s -  %(message)s', level=args.logging_level)
 
     if args.temperature < 0.0:
         raise ValueError(f'Temperatures below zero make no sense (got {args.temperature})')
@@ -82,10 +81,11 @@ def main():
         score = scores[seg_name]
         hyp = hyps[seg_name]
 
-        symm_diff_size = len(score.keys() - hyp.keys()) + len(hyp.keys() - score.keys())
+        symm_diff = [s for s in score if s not in hyp] + [h for h in hyp if h not in score]
+        symm_diff_size = len(symm_diff)
         if symm_diff_size > 0:
             nb_nonmatched += symm_diff_size
-            logging.error(f'Segment {seg_name} had {symm_diff_size} unmatched scores')
+            logging.warning(f'Segment {seg_name} had {symm_diff_size} unmatched scores ({symm_diff})')
 
         best_path = get_token_confidences(score, hyp, args.temperature, args.dummy)
         outputs[seg_name] = best_path
