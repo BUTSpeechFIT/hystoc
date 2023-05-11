@@ -39,7 +39,7 @@ Hystoc also allows to directly fuse outputs of multiple systems into a single on
 
 To this end a list of pairs needs to be provided like this:
 ```
-./fuse-nbests.py --method normalize-per-system example/a.score example/a.txt example/b.score example/b.txt
+./fuse-nbests.py --confidence-file fused.txt --method normalize-per-system example/a.score example/a.txt example/b.score example/b.txt
 ```
 
 Please note that our experiments did not show Hystoc fusion to consistently outperform Rover.

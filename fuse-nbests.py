@@ -142,8 +142,8 @@ def main():
     parser.add_argument('--logging-level', help='Logging level as per standard logging module')
     parser.add_argument('--temperature', type=float, default=1.0, help='multiplies log-probs before exponentiation')
     parser.add_argument('--method', choices=['direct', 'zero-per-system', 'normalize-per-system', 'normalized-round-robin'], default='normalize-per-system', help='How to fuse the systems')
+    parser.add_argument('--confidence-file', help='If none is given, standard output is used')
     parser.add_argument('hyps_scores_files', nargs='+', help="A list of pairs, organized as: <hyps A> <scores A> <hyps B> <scores B> ...")
-    parser.add_argument('confidence_file', nargs='?', help='If none is given, standard output is used')
     args = parser.parse_args()
 
     if len(args.hyps_scores_files) % 2 != 0:
