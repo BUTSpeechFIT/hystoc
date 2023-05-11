@@ -27,14 +27,14 @@ def roundrobin(*iterables):
     """
     # Recipe credited to George Sakkis
     pending = len(iterables)
-    nexts = cycle(iter(it).__next__ for it in iterables)
+    nexts = itertools.cycle(iter(it).__next__ for it in iterables)
     while pending:
         try:
             for next in nexts:
                 yield next()
         except StopIteration:
             pending -= 1
-            nexts = cycle(islice(nexts, pending))
+            nexts = itertools.cycle(itertools.islice(nexts, pending))
 
 
 def cn_from_segment(scored_hyps, temperature, only_best=False):
