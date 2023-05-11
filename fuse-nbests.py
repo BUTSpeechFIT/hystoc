@@ -81,11 +81,13 @@ def normalize_log_scores(variants, do_sort=False):
     variants[:] = [(h, s - normalizer) for h, s in pre_norm_scores]
 
 
-def merge(hyps_and_scores, method, out_f, temperature):
+def merge(hyps_and_scores, method, temperature):
     nb_nonmatched = 0
 
     all_keys = itertools.chain(*[list(s.keys()) for s, h in hyps_and_scores])
     all_segments = sorted(list(set(all_keys)))
+
+    best_paths = {}
 
     for seg_name in all_segments:
         logging.info(f'Processing {seg_name}')
@@ -131,10 +133,9 @@ def merge(hyps_and_scores, method, out_f, temperature):
         else:
             raise ValueError(f'Got unsupported method {method}')
 
-        best_path = filter_nones(best_cn_path(cn))
-        write_pctm(out_f, seg_name, best_path)
+        best_paths[seg_name] = filter_nones(best_cn_path(cn))
 
-    return nb_nonmatched
+    return best_paths, nb_nonmatched
 
 
 def main():
@@ -172,11 +173,14 @@ def main():
 
             exit(1)
 
+    best_paths, nb_nonmatched = merge(system_outputs, args.method, args.temperature)
     if args.confidence_file:
         with open(args.confidence_file, 'w') as out_f:
-            nb_nonmatched = merge(system_outputs, args.method, out_f, args.temperature)
+            for seg_name, best_path in best_paths.items():
+                write_pctm(out_f, seg_name, best_path)
     else:
-        nb_nonmatched = merge(system_outputs, args.method, sys.stdout, args.temperature)
+        for seg_name, best_path in best_paths.items():
+            write_pctm(sys.stdout, seg_name, best_path)
 
     if nb_nonmatched > 0:
         logging.warning(f'There was a total of {nb_nonmatched} non matched scores')
