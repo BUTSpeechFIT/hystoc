@@ -152,10 +152,10 @@ def main():
     system_outputs = []
     for i in range(0, len(args.hyps_scores_files), 2):
         with open(args.hyps_scores_files[i]) as f:
-            scores = load_scores_dict(f)
+            hyps = load_hyps_dict(f)
 
         with open(args.hyps_scores_files[i+1]) as f:
-            hyps = load_hyps_dict(f)
+            scores = load_scores_dict(f)
 
         system_outputs.append((scores, hyps))
 
