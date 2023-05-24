@@ -1,9 +1,8 @@
 # hystoc
-Getting confidences from any end-to-end systems, developed in context of Automatic Speech Recognition.
-The underlying technique was previously sucessfuly applied to [semi-supervised learning in OCR](https://arxiv.org/abs/2104.13037).
+Getting confidences from any end-to-end systems, developed in context of Automatic Speech Recognition
+As described in [the Hystoc paper](https://arxiv.org/abs/2305.12579), Hystoc confidences are pretty well calibrated and can significantly improve the quality of a fusion.
+The underlying technique had been previously sucessfuly applied to [semi-supervised learning in OCR](https://arxiv.org/abs/2104.13037).
 Hystoc is oblivious to the underlying task, but please note that no special care is provided for non-monotonic tasks such as Machine Translation.
-
-When using Hystoc, please cite (currently redacted because the paper is in a double-blind review).
 
 ## Installation
 
